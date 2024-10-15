@@ -1,4 +1,4 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Controller, Get, Query, Param } from '@nestjs/common';
 import { AppService } from './app.service';
 import { TwitterService } from './twitter.service';
 
@@ -17,5 +17,15 @@ export class AppController {
   @Get('tweets')
   async getTweets() {
     return this.twitterService.getTweets();
+  }
+
+  @Get('userId')
+  async getUserId() {
+    return this.twitterService.getUserId();
+  }
+
+  @Get('user-timeline/:userId')
+  async getUserTimeline(@Param('userId') userId: string) {
+    return this.twitterService.getUserTimeline(userId);
   }
 }
