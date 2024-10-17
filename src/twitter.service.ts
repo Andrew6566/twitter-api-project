@@ -7,21 +7,23 @@ dotenv.config();
 
 @Injectable()
 export class TwitterService {
-  private twitterClient: TwitterApi;
+  private client: TwitterApi;
   private stream: TweetStream;
 
   constructor() {
-    this.twitterClient = new TwitterApi({
+    this.client = new TwitterApi({
       appKey: process.env.TWITTER_API_KEY,
       appSecret: process.env.TWITTER_API_SECRET,
       accessToken: process.env.TWITTER_ACCESS_TOKEN,
       accessSecret: process.env.TWITTER_ACCESS_SECRET,
     });
 
-    // this.twitterClient = new TwitterApi({
+    // this.client = new TwitterApi({
     //   clientId: process.env.CLIENT_ID,
     //   clientSecret: process.env.CLIENT_SECRET,
     // });
+
+    // this.client = new TwitterApi(process.env.BEARER_TOKEN);
   }
 
   // async onModuleInit() {
@@ -32,15 +34,15 @@ export class TwitterService {
   //   this.stopUserStream();
   // }
 
-  @Cron(CronExpression.EVERY_5_MINUTES)
-  async scheduledGetUserId() {
-    console.log('Running scheduled getUserId');
-    await this.getUserId();
-  }
+  // @Cron(CronExpression.EVERY_10_SECONDS)
+  // async scheduledGetUserId() {
+  //   console.log('Running scheduled to get the user timeline');
+  //   await this.getUserTimeline();
+  // }
 
   async getTweets() {
     try {
-      const { data: createdTweet } = await this.twitterClient.v2.tweet(
+      const { data: createdTweet } = await this.client.v2.tweet(
         'twitter-api-v2 is awesome!',
         {
           poll: { duration_minutes: 120, options: ['Absolutely', 'For sure!'] },
@@ -55,7 +57,7 @@ export class TwitterService {
 
   async getUserId() {
     try {
-      const user = await this.twitterClient.v2.userByUsername('SontranAms');
+      const user = await this.client.v2.user(process.env.YOUR_USER_ID);
       console.log('Your User:', user);
     } catch (error) {
       console.error('Error fetching user ID:', error);
@@ -63,49 +65,30 @@ export class TwitterService {
     }
   }
 
-  async getUserTimeline(userId: string) {
+  async getAllDmEvents() {
     try {
-      // const userTimeline = await this.twitterClient.v2.userTimeline(
-      //   '1845732258671689728',
-      //   {
-      //     expansions: [
-      //       'attachments.media_keys',
-      //       'attachments.poll_ids',
-      //       'referenced_tweets.id',
-      //     ],
-      //     'media.fields': ['url'],
-      //   },
-      // );
+      // const eventTimeline = await this.client.v2.listDmEvents()
+      // console.log(eventTimeline)
 
-      // const tweets = [];
+      const eventTimeline = await this.client.v2.listDmEventsWithParticipant(
+        process.env.YOUR_USER_ID,
+      );
+      console.log(eventTimeline);
+    } catch (error) {
+      console.error('Error fetching DM events:', error);
+      throw error;
+    }
+  }
 
-      // for await (const tweet of userTimeline) {
-      //   console.log(
-      //     '🚀 SonTT25 ~ file: twitter.service.ts:70 ~ TwitterService ~ forawait ~ tweet:',
-      //     tweet,
-      //   );
-
-      //   const medias = userTimeline.includes.medias(tweet);
-      //   const poll = userTimeline.includes.poll(tweet);
-
-      //   const tweetInfo = {
-      //     id: tweet.id,
-      //     text: tweet.text,
-      //     medias: medias.length ? medias.map((m) => m.url) : [],
-      //     poll: poll ? poll.options.map((opt) => opt.label) : null,
-      //   };
-
-      //   tweets.push(tweetInfo);
-      // }
-
-      // return tweets;
-
-      // Home timeline is available in v1 API, so use .v1 prefix
-      const homeTimeline = await this.twitterClient.v1.homeTimeline();
+  async getUserTimeline() {
+    try {
+      const homeTimeline = await this.client.v2.userTimeline(
+        process.env.YOUR_USER_ID,
+      );
 
       console.log(
-        '🚀 SonTT25 ~ file: twitter.service.ts:99 ~ TwitterService ~ getUserTimeline ~ homeTimeline:',
-        homeTimeline,
+        '🚀 file: twitter.service.ts:83 ~ TwitterService ~ getUserTimeline ~ homeTimeline:',
+        homeTimeline?.data?.data[0],
       );
     } catch (error) {
       console.error('Error fetching user timeline:', error);
@@ -115,11 +98,11 @@ export class TwitterService {
 
   async startUserStream() {
     try {
-      this.stream = await this.twitterClient.v1.filterStream({
+      this.stream = await this.client.v1.filterStream({
         follow: [process.env.YOUR_USER_ID], // Replace with your Twitter user ID
       });
 
-      const stream = await this.twitterClient.v1.sampleStream();
+      const stream = await this.client.v1.sampleStream();
 
       this.stream.autoReconnect = true;
 

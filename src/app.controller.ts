@@ -26,6 +26,11 @@ export class AppController {
 
   @Get('user-timeline/:userId')
   async getUserTimeline(@Param('userId') userId: string) {
-    return this.twitterService.getUserTimeline(userId);
+    return this.twitterService.getUserTimeline();
+  }
+
+  @Get('dm-events')
+  async getDmEvents() {
+    return this.twitterService.getAllDmEvents();
   }
 }
